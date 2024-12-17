@@ -52,7 +52,7 @@ async def run_ble_client(device, hrqueue):
         input() # clear input buffer
         print (f"Quitting on user command")
         # causes the client task to exit
-        if loop==None:
+        if loop is None:
             quitclient.set() # we are in the event loop thread
         else:
             # we are in a separate thread - call set in the event loop thread
@@ -80,7 +80,6 @@ async def run_ble_client(device, hrqueue):
             # run keyboard_handler in a daemon thread
             Thread(target=keyboard_handler, kwargs={'loop': loop},
                    daemon=True).start()
-        print(">>> Hit Enter to exit <<<")
         # create the heart rate object; set queue and other
         # parameters
         heartrate=HeartRate(client, queue=hrqueue,
@@ -122,26 +121,3 @@ async def run_consumer_task(hrqueue):
         if frame[0]=='QUIT':   # intercept exit signal
             break
         print(frame)
-
-        
-async def main():
-    print("Scanning for BLE devices")
-    device=await scan()
-    if device==None:
-        print("Polar device not found. If you have another compatible")
-        print("device, edit the scan() function accordingly.")
-        sys.exit(-4)
-    # the queue needs to be long enough to cache all the frames, since
-    # put_nowait is used by HeartRate
-    hrqueue=asyncio.Queue()
-    # producer task will return when the user hits enter or the
-    # sensor disconnects
-    producer=run_ble_client(device, hrqueue)
-    consumer=run_consumer_task(hrqueue)
-    # wait for the two tasks to exit
-    await asyncio.gather(producer, consumer)
-    print("Bye.")
-
-
-# execute the main coroutine
-asyncio.run(main())
